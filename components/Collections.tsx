@@ -324,7 +324,7 @@ export default function Collections() {
     <div className="relative">
       <div className="aspect-[4/5] overflow-hidden bg-white">
         <img
-          src="\videos\demo.mp4"
+          src="https://drive.google.com/file/d/1dQOQwBS799omPEA83SjO8oxSaxhwgHiL/view?usp=sharing"
           alt="Custom made shoes"
           className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
         />
