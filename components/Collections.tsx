@@ -323,11 +323,14 @@ export default function Collections() {
     {/* Right Visual */}
     <div className="relative">
       <div className="aspect-[4/5] overflow-hidden bg-white">
-        <img
-          src="https://drive.google.com/file/d/1dQOQwBS799omPEA83SjO8oxSaxhwgHiL/view?usp=sharing"
-          alt="Custom made shoes"
-          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-        />
+        <video
+      src="/videos/demo.mp4"
+      autoPlay
+      muted
+      loop
+      playsInline
+      className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+    />
       </div>
 
       <div className="absolute top-6 left-6 bg-white/95 px-4 py-2">
