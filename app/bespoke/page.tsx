@@ -1,28 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import ShoeViewer from "@/components/bespoke/ShoeViewer";
-
-type ColorOption = {
-  name: string;
-  hex: string;
-};
 
 const materials = [
   "Luxe Calf",
   "Box Calf",
   "Painted Full Grain",
+  "Suede",
 ];
 
-const colors: ColorOption[] = [
-  { name: "Silver Grey", hex: "#C0C0C0" },
-  { name: "Burgundy", hex: "#6D001A" },
-  { name: "Crimson", hex: "#B00000" },
-  { name: "Royal Blue", hex: "#002F6C" },
-  { name: "Teal", hex: "#006D77" },
-  { name: "Dark Brown", hex: "#4B2E1E" },
-  { name: "Emerald", hex: "#014421" },
+const palette = [
+  { name: "Black", hex: "#111111" },
+  { name: "Dark Brown", hex: "#5C3A21" },
+  { name: "Medium Brown", hex: "#8B5E34" },
+  { name: "Light Brown", hex: "#A9784D" },
+  { name: "Cognac", hex: "#B9783A" },
+  { name: "Navy", hex: "#0A3A7A" },
+  { name: "White", hex: "#E7E5E0" },
+  { name: "Grey", hex: "#6B7280" },
 ];
 
 const sizes = [
@@ -34,145 +31,221 @@ const sizes = [
   "UK 11",
 ];
 
+/**
+ * INTERNAL KEYS STAY SAME
+ * LABELS FIXED FOR USER
+ */
+const parts = [
+  { key: "sole", label: "Upper" },
+  { key: "toe", label: "Toe" },
+  { key: "laces", label: "Laces" },
+  { key: "upper", label: "Sole" },
+] as const;
+
+type PartKey =
+  (typeof parts)[number]["key"];
+
+type ColorItem = {
+  name: string;
+  hex: string;
+};
+
 export default function BespokePage() {
+  const [selectedPart, setSelectedPart] =
+    useState<PartKey>("upper");
+
   const [config, setConfig] = useState({
     material: "Luxe Calf",
-    color: colors[5],
     size: "UK 9",
-    finish: "Burnishing",
     burnishing: true,
+    finish: "glossy",
+    colors: {
+      /**
+       * keep existing working logic
+       */
+      sole: palette[3],
+      toe: palette[0],
+      laces: palette[6],
+      upper: palette[4],
+    },
   });
 
-  const finalPrice =
-    380 +
-    (config.burnishing ? 40 : 0) +
-    (config.material === "Painted Full Grain" ? 60 : 0);
+  const activeColor =
+    config.colors[selectedPart];
+
+  const price = useMemo(() => {
+    const base = 440;
+
+    const materialCost =
+      config.material === "Suede"
+        ? 40
+        : config.material ===
+          "Painted Full Grain"
+        ? 80
+        : config.material === "Luxe Calf"
+        ? 60
+        : 50;
+
+    return (
+      base +
+      materialCost +
+      (config.burnishing ? 25 : 0)
+    );
+  }, [
+    config.material,
+    config.burnishing,
+  ]);
+
+  const updatePartColor = (
+    color: ColorItem
+  ) => {
+    setConfig((prev) => ({
+      ...prev,
+      colors: {
+        ...prev.colors,
+        [selectedPart]: color,
+      },
+    }));
+  };
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <div className="grid lg:grid-cols-[420px_1fr_300px] min-h-screen">
-
+    <main className="h-screen overflow-hidden bg-[#FAF9F6] text-black">
+      <div className="grid grid-cols-12 h-screen">
         {/* LEFT PANEL */}
-        <aside className="border-r border-white/10 p-8">
-          {/* BACK BUTTON */}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white transition mb-8"
-          >
-            ← Back to Home
-          </Link>
+        <aside className="col-span-3 border-r border-black/10 bg-[#FCFBF8] p-8 flex flex-col justify-between">
+          <div>
+            <Link
+              href="/"
+              className="mb-8 inline-block text-sm text-black/60 hover:text-black transition-colors"
+            >
+              ← Back to Home
+            </Link>
 
-          <h1 className="font-display text-4xl font-thin mb-10">
-            Craft Your Vision
-          </h1>
+            <h1 className="text-5xl font-serif leading-tight mb-8">
+              Craft Your Vision
+            </h1>
 
-          {/* MATERIAL */}
-          <div className="mb-10">
-            <p className="text-xs uppercase tracking-[0.25em] text-white/40 mb-4">
-              Material
-            </p>
-
-            <div className="grid grid-cols-1 gap-3">
-              {materials.map((item) => (
-                <button
-                  key={item}
-                  onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      material: item,
-                    }))
-                  }
-                  className={`text-left transition ${
-                    config.material === item
-                      ? "text-white"
-                      : "text-white/50 hover:text-white/80"
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* COLOR + TOGGLE */}
-          <div className="mb-10">
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-xs uppercase tracking-[0.25em] text-white/40">
-                Color
+            {/* PARTS */}
+            <div className="mb-8">
+              <p className="text-xs tracking-[0.3em] text-black/50 mb-4">
+                PART
               </p>
 
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-white/50">
-                  Burnishing
-                </span>
-
-                <button
-                  onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      burnishing: !prev.burnishing,
-                    }))
-                  }
-                  className={`relative w-12 h-6 rounded-full transition ${
-                    config.burnishing
-                      ? "bg-cyan-500"
-                      : "bg-white/20"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white transition ${
-                      config.burnishing
-                        ? "left-7"
-                        : "left-1"
+              <div className="grid grid-cols-2 gap-3">
+                {parts.map((part) => (
+                  <button
+                    key={part.key}
+                    onClick={() =>
+                      setSelectedPart(
+                        part.key
+                      )
+                    }
+                    className={`border py-3 capitalize transition-all ${
+                      selectedPart ===
+                      part.key
+                        ? "border-black"
+                        : "border-black/10 text-black/60"
                     }`}
-                  />
-                </button>
+                  >
+                    {part.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
-              {colors.map((color) => (
-                <button
-                  key={color.name}
-                  onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
-                      color,
-                    }))
-                  }
-                  className={`w-16 h-16 border transition ${
-                    config.color.name === color.name
-                      ? "border-white scale-105"
-                      : "border-white/20"
-                  }`}
-                  style={{
-                    backgroundColor: color.hex,
-                  }}
-                />
-              ))}
+            {/* COLORS */}
+            <div className="mb-8">
+              <p className="text-xs tracking-[0.3em] text-black/50 mb-4">
+                COLOR
+              </p>
+
+              <div className="grid grid-cols-4 gap-3">
+                {palette.map((color) => (
+                  <button
+                    key={color.name}
+                    onClick={() =>
+                      updatePartColor(
+                        color
+                      )
+                    }
+                    className={`h-14 border transition-all ${
+                      activeColor.hex ===
+                      color.hex
+                        ? "border-black border-2 scale-95"
+                        : "border-black/10"
+                    }`}
+                    style={{
+                      backgroundColor:
+                        color.hex,
+                    }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* MATERIAL */}
+            <div>
+              <p className="text-xs tracking-[0.3em] text-black/50 mb-4">
+                MATERIAL
+              </p>
+
+              <div className="space-y-3">
+                {materials.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() =>
+                      setConfig((p) => ({
+                        ...p,
+                        material: item,
+                      }))
+                    }
+                    className={`block transition-all ${
+                      config.material ===
+                      item
+                        ? "font-semibold"
+                        : "text-black/60"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
+        </aside>
 
-          {/* SIZE */}
-          <div className="mb-10">
-            <p className="text-xs uppercase tracking-[0.25em] text-white/40 mb-4">
-              Size
+        {/* CENTER */}
+        <section className="col-span-7 bg-[#F8F6F2] h-screen">
+          <ShoeViewer
+            config={{
+              ...config,
+              price,
+            }}
+          />
+        </section>
+
+        {/* RIGHT PANEL */}
+        <aside className="col-span-2 border-l border-black/10 bg-[#FCFBF8] p-8 flex flex-col justify-between">
+          <div>
+            <p className="text-xs tracking-[0.3em] text-black/50 mb-4">
+              SIZE
             </p>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {sizes.map((size) => (
                 <button
                   key={size}
                   onClick={() =>
-                    setConfig((prev) => ({
-                      ...prev,
+                    setConfig((p) => ({
+                      ...p,
                       size,
                     }))
                   }
-                  className={`border px-4 py-3 text-sm transition ${
+                  className={`border py-3 transition-all ${
                     config.size === size
-                      ? "border-white text-white"
-                      : "border-white/20 text-white/50"
+                      ? "border-black"
+                      : "border-black/10"
                   }`}
                 >
                   {size}
@@ -180,30 +253,20 @@ export default function BespokePage() {
               ))}
             </div>
           </div>
-        </aside>
 
-        {/* CENTER SHOE */}
-        <section className="flex items-center justify-center">
-          <ShoeViewer config={config} />
-        </section>
+          <div>
+            <p className="text-xs tracking-[0.3em] text-black/50 mb-4">
+              TOTAL PRICE
+            </p>
 
-        {/* RIGHT PRICE */}
-        <aside className="border-l border-white/10 p-8 flex flex-col justify-end">
-          <p className="text-xs uppercase tracking-[0.2em] text-white/40">
-            Total Bespoke Price
-          </p>
+            <h2 className="text-7xl font-serif mb-8">
+              £{price}
+            </h2>
 
-          <h2 className="font-display text-6xl font-thin my-6">
-            £{finalPrice}
-          </h2>
-
-          <button className="border border-white/20 py-4 mb-4 hover:bg-white hover:text-black transition">
-            View Details
-          </button>
-
-          <button className="bg-white text-black py-4 hover:scale-[1.02] transition">
-            Place Order
-          </button>
+            <button className="w-full bg-black text-white py-4 hover:opacity-90 transition-opacity">
+              Place Order
+            </button>
+          </div>
         </aside>
       </div>
     </main>
