@@ -2,27 +2,31 @@
 
 import { Canvas } from "@react-three/fiber";
 import {
-  OrbitControls,
   Environment,
+  OrbitControls,
   useGLTF,
-  ContactShadows,
+  Center,
 } from "@react-three/drei";
-import { Suspense, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+
+type ColorType = {
+  name: string;
+  hex: string;
+};
 
 type ConfigType = {
   material: string;
-  color: {
-    name: string;
-    hex: string;
-  };
   size: string;
-  finish: string;
   burnishing: boolean;
-};
-
-type ShoeViewerProps = {
-  config: ConfigType;
+  finish?: string;
+  price: number;
+  colors: {
+    upper: ColorType;
+    toe: ColorType;
+    laces: ColorType;
+    sole: ColorType;
+  };
 };
 
 function ShoeModel({
@@ -30,111 +34,177 @@ function ShoeModel({
 }: {
   config: ConfigType;
 }) {
-  const { scene } = useGLTF("/models/shoe.glb");
+  const { scene } = useGLTF("/models/Shoe.glb");
 
-  const normalizedScene = useMemo(() => {
-    const clonedScene = scene.clone();
+  const shoe = useMemo(
+    () => scene.clone(true),
+    [scene]
+  );
 
-    const box = new THREE.Box3().setFromObject(clonedScene);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-
-    clonedScene.position.sub(center);
-
-    const maxDimension = Math.max(
-      size.x,
-      size.y,
-      size.z
-    );
-
-    const scaleFactor = 2.2 / maxDimension;
-    clonedScene.scale.setScalar(scaleFactor);
-
-    return clonedScene;
-  }, [scene]);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    normalizedScene.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.material = child.material.clone();
+    if (initialized.current) return;
 
-        const material =
-          child.material as THREE.MeshStandardMaterial;
+    shoe.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
 
-        material.color = new THREE.Color(
-          config.color.hex
+      child.material = (
+        child.material as THREE.MeshStandardMaterial
+      ).clone();
+
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+
+    initialized.current = true;
+  }, [shoe]);
+
+  useEffect(() => {
+    shoe.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+
+      const material =
+        child.material as THREE.MeshStandardMaterial;
+
+      const name = child.name;
+
+      /**
+       * SOLE
+       */
+      if (
+        name.startsWith("Cube") ||
+        name === "Plane025"
+      ) {
+        material.map = null;
+        material.normalMap = null;
+        material.roughnessMap = null;
+        material.metalnessMap = null;
+
+        material.color.set(
+          config.colors.sole.hex
         );
 
-        material.roughness =
-          config.material === "Luxe Calf"
-            ? 0.25
-            : config.material === "Box Calf"
-            ? 0.45
-            : 0.1;
-
-        material.metalness = config.burnishing
-          ? 0.2
-          : 0.05;
-
-        child.castShadow = true;
-        child.receiveShadow = true;
+        material.roughness = 0.6;
+        material.metalness = 0.02;
       }
+
+      /**
+       * LACES
+       */
+      else if (
+        name.startsWith("BézierCurve") ||
+        name.startsWith("BezierCurve")
+      ) {
+        material.map = null;
+
+        material.color.set(
+          config.colors.laces.hex
+        );
+
+        material.roughness = 0.5;
+      }
+
+      /**
+       * TOE
+       */
+      else if (name === "Plane013") {
+        material.color.set(
+          config.colors.toe.hex
+        );
+
+        material.roughness = 0.45;
+        material.metalness = 0.03;
+      }
+
+      /**
+       * UPPER
+       * IMPORTANT: exclude Plane025
+       */
+      else if (
+        name.startsWith("Plane") &&
+        name !== "Plane025" &&
+        name !== "Plane013"
+      ) {
+        material.color.set(
+          config.colors.upper.hex
+        );
+
+        switch (config.material) {
+          case "Suede":
+            material.roughness = 0.85;
+            material.metalness = 0.02;
+            break;
+
+          case "Painted Full Grain":
+            material.roughness = 0.15;
+            material.metalness = 0.08;
+            break;
+
+          case "Luxe Calf":
+            material.roughness = 0.45;
+            material.metalness = 0.03;
+            break;
+
+          default:
+            material.roughness = 0.35;
+            material.metalness = 0.04;
+        }
+      }
+
+      material.needsUpdate = true;
     });
-  }, [normalizedScene, config]);
+  }, [config, shoe]);
 
   return (
-    <primitive
-      object={normalizedScene}
-      position={[0, -0.3, 0]}
-      rotation={[0.08, 0.55, 0]}
-    />
+    <Center>
+      <primitive
+        object={shoe}
+        scale={2.8}
+      />
+    </Center>
   );
 }
 
 export default function ShoeViewer({
   config,
-}: ShoeViewerProps) {
+}: {
+  config: ConfigType;
+}) {
   return (
-    <div className="h-[700px] w-full">
+    <div className="w-full h-full">
       <Canvas
         shadows
-        camera={{ position: [0, 0.5, 6.5], fov: 40 }}
+        camera={{
+          position: [0, 0, 5],
+          fov: 35,
+        }}
       >
         <ambientLight intensity={1.6} />
 
         <directionalLight
           position={[5, 5, 5]}
-          intensity={2}
+          intensity={3}
           castShadow
         />
 
-        <Environment preset="studio" />
-
-        <Suspense fallback={null}>
-          <ShoeModel config={config} />
-        </Suspense>
-
-        <ContactShadows
-          position={[0, -1.2, 0]}
-          opacity={0.35}
-          scale={6}
-          blur={2}
+        <directionalLight
+          position={[-4, 2, 3]}
+          intensity={1.2}
         />
 
-        {/* ZOOM ENABLED */}
+        <ShoeModel config={config} />
+
         <OrbitControls
-          enableZoom={true}
-          minDistance={3}
-          maxDistance={10}
-          autoRotate
-          autoRotateSpeed={0.6}
+          enableZoom
+          minDistance={1.5}
+          maxDistance={15}
+          zoomSpeed={1.2}
+          enablePan={false}
         />
+
+        <Environment preset="studio" />
       </Canvas>
     </div>
   );
 }
-
-useGLTF.preload("/models/shoe.glb");
