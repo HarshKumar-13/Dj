@@ -1,6 +1,6 @@
-
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import SuitViewer from "@/components/custom-suit/SuitViewer";
 
@@ -15,7 +15,8 @@ const colors = [
 const parts = ["Jacket", "Lapel", "Buttons", "Pants"];
 
 export default function CustomSuitPage() {
-  const [selectedPart, setSelectedPart] = useState("Jacket");
+  const [selectedPart, setSelectedPart] =
+    useState("Jacket");
 
   const [config, setConfig] = useState({
     jacket: colors[0],
@@ -28,11 +29,14 @@ export default function CustomSuitPage() {
   return (
     <main className="min-h-screen bg-[#f6f5f2] text-black">
       <div className="grid grid-cols-12 min-h-screen">
-        {/* LEFT */}
+        {/* LEFT PANEL */}
         <aside className="col-span-3 border-r border-black/10 p-8">
-          <button className="text-sm text-black/60 mb-8">
-            ← Back to Home
-          </button>
+          <Link
+            href="/#apparel"
+            className="text-sm text-black/60 mb-8 inline-block hover:text-black transition-colors duration-300"
+          >
+            ← Back to Suits
+          </Link>
 
           <h1 className="text-6xl font-serif leading-tight mb-12">
             Craft Your
@@ -50,7 +54,9 @@ export default function CustomSuitPage() {
               {parts.map((part) => (
                 <button
                   key={part}
-                  onClick={() => setSelectedPart(part)}
+                  onClick={() =>
+                    setSelectedPart(part)
+                  }
                   className={`border p-4 ${
                     selectedPart === part
                       ? "border-black"
@@ -74,25 +80,32 @@ export default function CustomSuitPage() {
                 <button
                   key={color.name}
                   onClick={() =>
-                    setConfig({
-                      ...config,
-                      [selectedPart.toLowerCase()]: color,
-                    })
+                    setConfig((prev) => ({
+                      ...prev,
+                      [selectedPart.toLowerCase()]:
+                        color,
+                    }))
                   }
                   className="h-14 border border-black/10"
-                  style={{ background: color.hex }}
+                  style={{
+                    background:
+                      color.hex,
+                  }}
+                  title={color.name}
                 />
               ))}
             </div>
           </div>
         </aside>
 
-        {/* CENTER */}
+        {/* CENTER VIEWER */}
         <section className="col-span-6">
-          <SuitViewer config={config} />
+          <SuitViewer
+            config={config}
+          />
         </section>
 
-        {/* RIGHT */}
+        {/* RIGHT PANEL */}
         <aside className="col-span-3 border-l border-black/10 p-8 flex flex-col justify-end">
           <p className="text-xs tracking-[0.3em] uppercase text-black/50 mb-4">
             Total Price
@@ -102,7 +115,7 @@ export default function CustomSuitPage() {
             €{config.price}
           </h2>
 
-          <button className="w-full bg-black text-white py-4 text-lg">
+          <button className="w-full bg-black text-white py-4 text-lg hover:opacity-90 transition">
             Place Order
           </button>
         </aside>
